@@ -1,9 +1,11 @@
 package container
 
-import "container/list"
+import (
+	"fmt"
+)
 
 type Hashable interface {
-	HashCode() uint64
+	HashCode() uint32
 
 	Equal(other Hashable) bool
 }
@@ -33,11 +35,11 @@ func NewHashMap() *HashMap {
 	return NewHashMapWithCapacityAndFactor(default_capacity, default_factor)
 }
 
-func NewHashMapWithCapacity(cap int32) *HashMap {
+func NewHashMapWithCapacity(cap uint32) *HashMap {
 	return NewHashMapWithCapacityAndFactor(cap, default_factor)
 }
 
-func NewHashMapWithCapacityAndFactor(cap int32, factor float32) *HashMap {
+func NewHashMapWithCapacityAndFactor(cap uint32, factor float32) *HashMap {
 	if cap < default_capacity {
 		cap = default_capacity
 	}
@@ -50,19 +52,23 @@ func NewHashMapWithCapacityAndFactor(cap int32, factor float32) *HashMap {
 	}
 }
 
+func (hashMap *HashMap) Size() uint32 {
+	return hashMap.size
+}
+
 func (hashMap *HashMap) Get(key Hashable) interface{} {
 	node := hashMap.get(key)
 	if node != nil {
-
+		return node.Value
+	} else {
+		return nil
 	}
 }
 
-func (HashMap *HashMap) get(key Hashable) *linkNode {
-
-}
-
 func (hashMap *HashMap) Put(key Hashable, value interface{}) {
-	if hashMap.size+1 > hashMap.capacity*hashMap.factor {
+
+
+	if (float32)(hashMap.size+1) > (float32)(hashMap.capacity)*hashMap.factor {
 		hashMap.rehash()
 	}
 	hashMap.size++
@@ -70,6 +76,54 @@ func (hashMap *HashMap) Put(key Hashable, value interface{}) {
 		Key: key,
 		Value: value,
 	})
+}
+
+func (hashMap *HashMap) Remove(key Hashable) {
+	index := key.HashCode() % hashMap.capacity
+	node := hashMap.buckets[index]
+
+	if node == nil {
+		return
+	} else if node.Key.Equal(key) {
+		hashMap.buckets[index] = node.Next
+	} else {
+		for node.Next != nil {
+			if node.Next.Key.Equal(key) {
+				node.Next = node.Next.Next
+			}
+			node = node.Next
+		}
+	}
+}
+
+func (hashMap *HashMap) String() string {
+	buffer := []rune{'['}
+
+	for _, node := range hashMap.buckets {
+		for node != nil {
+			buffer = append(buffer,
+				([]rune)(fmt.Sprintf("{%v: %v},", node.Key, node.Value))...)
+		}
+	}
+
+	if buffer[len(buffer)-1] == ',' {
+		buffer[len(buffer)-1] = ']'
+	} else {
+		buffer = append(buffer, ']')
+	}
+
+	return (string)(buffer)
+}
+
+func (hashMap *HashMap) get(key Hashable) *linkNode {
+	node := hashMap.buckets[key.HashCode() % hashMap.capacity]
+	for node != nil {
+		if node.Key.Equal(key) {
+			return node
+		}
+		node = node.Next
+	}
+	return nil
 }
 
 func (hashMap *HashMap) put(key Hashable, node *linkNode) {
@@ -84,7 +138,7 @@ func (hashMap *HashMap) rehash() {
 	oldBuckets := hashMap.buckets
 
 	hashMap.capacity = hashMap.capacity << 1
-	hashMap.buckets = make([]*list.List, hashMap.capacity)
+	hashMap.buckets = make([]*linkNode, hashMap.capacity)
 
 	for _, node := range oldBuckets {
 		for node != nil {

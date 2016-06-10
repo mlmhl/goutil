@@ -52,8 +52,12 @@ func NewHashMapWithCapacityAndFactor(cap uint32, factor float32) *HashMap {
 	}
 }
 
-func (hashMap *HashMap) Size() uint32 {
+func (hashMap *HashMap) Len() uint32 {
 	return hashMap.size
+}
+
+func (hashMap *HashMap) Contains(key Hashable) bool {
+	return hashMap.Get(key) != nil
 }
 
 func (hashMap *HashMap) Get(key Hashable) interface{} {

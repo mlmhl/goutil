@@ -16,9 +16,9 @@ const (
 )
 
 type linkNode struct {
-	Key Hashable
+	Key   Hashable
 	Value interface{}
-	Next *linkNode
+	Next  *linkNode
 }
 
 type HashMap struct {
@@ -57,25 +57,40 @@ func (hashMap *HashMap) Size() uint32 {
 }
 
 func (hashMap *HashMap) Get(key Hashable) interface{} {
-	node := hashMap.get(key)
-	if node != nil {
-		return node.Value
-	} else {
-		return nil
+	node := hashMap.buckets[key.HashCode()%hashMap.capacity]
+	for node != nil {
+		if node.Key.Equal(key) {
+			return node.Value
+		}
+		node = node.Next
 	}
+	return nil
 }
 
 func (hashMap *HashMap) Put(key Hashable, value interface{}) {
+	code := key.HashCode()
+	index := code % hashMap.capacity
 
-
-	if (float32)(hashMap.size+1) > (float32)(hashMap.capacity)*hashMap.factor {
-		hashMap.rehash()
+	// If key exist, update its value.
+	for node := hashMap.buckets[index]; node != nil; {
+		if node.Key.Equal(key) {
+			node.Value = value
+			return
+		}
+		node = node.Next
 	}
+
 	hashMap.size++
-	hashMap.put(key, &linkNode{
-		Key: key,
+	node := &linkNode{
+		Key:   key,
 		Value: value,
-	})
+	}
+	if (float32)(hashMap.size) > (float32)(hashMap.capacity)*hashMap.factor {
+		hashMap.rehash()
+		hashMap.put(code, node)
+	} else {
+		hashMap.insert((int)(index), node)
+	}
 }
 
 func (hashMap *HashMap) Remove(key Hashable) {
@@ -103,8 +118,11 @@ func (hashMap *HashMap) String() string {
 		for node != nil {
 			buffer = append(buffer,
 				([]rune)(fmt.Sprintf("{%v: %v},", node.Key, node.Value))...)
+			node = node.Next
 		}
 	}
+
+	fmt.Println("mark")
 
 	if buffer[len(buffer)-1] == ',' {
 		buffer[len(buffer)-1] = ']'
@@ -115,22 +133,11 @@ func (hashMap *HashMap) String() string {
 	return (string)(buffer)
 }
 
-func (hashMap *HashMap) get(key Hashable) *linkNode {
-	node := hashMap.buckets[key.HashCode() % hashMap.capacity]
-	for node != nil {
-		if node.Key.Equal(key) {
-			return node
-		}
-		node = node.Next
-	}
-	return nil
+func (hashMap *HashMap) put(code uint32, node *linkNode) {
+	hashMap.insert((int)(code%hashMap.capacity), node)
 }
 
-func (hashMap *HashMap) put(key Hashable, node *linkNode) {
-	index := key.HashCode() % hashMap.capacity
-	if hashMap.buckets[index] == nil {
-		hashMap.buckets[index] = node
-	}
+func (hashMap *HashMap) insert(index int, node *linkNode) {
 	node.Next, hashMap.buckets[index] = hashMap.buckets[index], node
 }
 
@@ -143,7 +150,7 @@ func (hashMap *HashMap) rehash() {
 	for _, node := range oldBuckets {
 		for node != nil {
 			next := node.Next
-			hashMap.put(node.Key, node)
+			hashMap.put(node.Key.HashCode(), node)
 			node = next
 		}
 	}

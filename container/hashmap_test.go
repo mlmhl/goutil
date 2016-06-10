@@ -33,16 +33,43 @@ func checkHashMapContent(hashMap *HashMap, target string, t *testing.T) {
 	}
 }
 
-func TestHashMap(t *testing.T) {
-	t.Log("Test: HashMap ...")
+func checkHashMapValues(key *testKey, target string, value string, t *testing.T) {
+	if target != value {
+		t.Fatalf("Wrong value(%v): Wanted %s, got %s", key, target, value)
+	}
+}
 
+func TestHashMap(t *testing.T) {
 	hashMap := NewHashMap()
 
+	keys := []*testKey{newTestKey(1), newTestKey(2),newTestKey(3)}
+	values := []string{"1", "2", "3"}
+
 	t.Log("Test: Put ...")
+	for i := 0; i < len(keys); i++ {
+		hashMap.Put(keys[i],values[i])
+	}
+	checkHashMapContent(hashMap, "[{&{1}: 1},{&{2}: 2},{&{3}: 3}]", t)
+	t.Log("Passed")
 
-	hashMap.Put(newTestKey(1), "1")
-	hashMap.Put(newTestKey(2), "2")
-	hashMap.Put(newTestKey(3), "3")
+	t.Log("Test: Get ...")
+	for i := 0; i < len(keys); i++ {
+		checkHashMapValues(keys[i], values[i], hashMap.Get(keys[i]).(string), t)
+	}
+	t.Log("Passed")
 
-	t.Log(hashMap.String())
+	t.Log("Test: Rehash ...")
+	hashMap = NewHashMapWithCapacity(2)
+	for i := 0; i < len(keys); i++ {
+		hashMap.Put(keys[i],values[i])
+	}
+	checkHashMapContent(hashMap, "[{&{1}: 1},{&{2}: 2},{&{3}: 3}]", t)
+	t.Log("Passed")
+
+	t.Log("Test: Remove ...")
+	hashMap.Remove(keys[0])
+	hashMap.Remove(keys[2])
+	checkHashMapContent(hashMap, "[{&{2}: 2}]", t)
+	t.Log("Passed")
+
 }

@@ -32,6 +32,23 @@ func TestTrie(t *testing.T) {
 	}
 	t.Log("Passed")
 
+	t.Log("Test Trie: Iterator ...")
+	iterator := trie.Iterator()
+	for iterator.HasNext() {
+		v := iterator.Next().(int)
+		exist := false
+		for _, t := range(values) {
+			if v == t {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			t.Fatalf("Not exist value: %d", v)
+		}
+	}
+	t.Log("Passed")
+
 	t.Log("Test Trie: Remove ...")
 	i := 4
 	for k, _ := range(values) {

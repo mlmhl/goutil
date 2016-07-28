@@ -89,3 +89,51 @@ func (trie *Trie) Remove(key string) {
 		trie.size--
 	}
 }
+
+func (trie *Trie) Iterator() Iterator {
+	return newTrieIterator(trie.root)
+}
+
+type trieIterator struct {
+	stack *Stack
+}
+
+func newTrieIterator(node *node) *trieIterator {
+	stack := NewStack()
+	if node != nil {
+		stack.Push(node)
+	}
+	return &trieIterator{
+		stack: stack,
+	}
+}
+
+func (iterator *trieIterator) HasNext() bool {
+	iterator.rollToNextValue()
+	return !iterator.stack.IsEmpty()
+}
+
+func (iterator *trieIterator) Next() interface{} {
+	if !iterator.HasNext() {
+		return nil
+	}
+	node := iterator.stack.Peek().(*node)
+	iterator.stack.Pop()
+	return node.value
+}
+
+func (iterator *trieIterator) rollToNextValue() {
+	for {
+		if iterator.stack.IsEmpty() {
+			break
+		}
+		node := iterator.stack.Peek().(*node)
+		if node.hasValue() {
+			break
+		}
+		iterator.stack.Pop()
+		for _, next := range(node.table) {
+			iterator.stack.Push(next)
+		}
+	}
+}

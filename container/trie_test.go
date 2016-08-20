@@ -7,11 +7,11 @@ import (
 func TestTrie(t *testing.T) {
 	trie := NewTrie()
 	values := map[string]int{
-		"1": 1,
-		"2": 2,
-		"3": 3,
-		"4": 4,
-		"5": 5,
+		"asdfg": 1,
+		"asdzxcv": 2,
+		"qwerstyu": 3,
+		"qweds": 4,
+		"qwersmjkn": 5,
 	}
 
 	t.Log("Test Trie: Put ...")
@@ -35,7 +35,7 @@ func TestTrie(t *testing.T) {
 	t.Log("Test Trie: Iterator ...")
 	iterator := trie.Iterator()
 	for iterator.HasNext() {
-		v := iterator.Next().(int)
+		v := iterator.Next().(*Entry).GetValue()
 		exist := false
 		for _, t := range(values) {
 			if v == t {

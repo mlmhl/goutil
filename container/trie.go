@@ -16,6 +16,26 @@ func (node *node) hasValue() bool {
 	return node.value != nil
 }
 
+type Entry struct {
+	key string
+	value interface{}
+}
+
+func newEntry(key string, value interface{}) *Entry {
+	return &Entry{
+		key: key,
+		value: value,
+	}
+}
+
+func (entry *Entry) GetKey() string {
+	return entry.key
+}
+
+func (entry *Entry) GetValue() interface{} {
+	return entry.value
+}
+
 type Trie struct {
 	size int
 	root *node
@@ -90,50 +110,79 @@ func (trie *Trie) Remove(key string) {
 	}
 }
 
+func (trie *Trie) KeySet() []string {
+	keySet := []string{}
+	keyTrace := []rune{}
+	trie.keySetDfs(trie.root, &keySet, &keyTrace)
+	return keySet
+}
+
+func (trie *Trie) keySetDfs(node *node, set *[]string, keyTrace *[]rune) {
+	if node.hasValue() {
+		*set = append(*set, string(*keyTrace))
+	}
+	for c, child := range(node.table) {
+		*keyTrace = append(*keyTrace, c)
+		trie.keySetDfs(child, set, keyTrace)
+		*keyTrace = (*keyTrace)[:len(*keyTrace) - 1]
+	}
+}
+
+func (trie *Trie) ValueSet() []interface{} {
+	valueSet := []interface{}{}
+	trie.valueSetDfs(trie.root, &valueSet)
+	return valueSet
+}
+
+func (trie *Trie) valueSetDfs(node *node, set *[]interface{}) {
+	if node.hasValue() {
+		*set = append(*set, node.value)
+	}
+	for _, child := range(node.table) {
+		trie.valueSetDfs(child, set)
+	}
+}
+
+func (trie *Trie) EntrySet() []*Entry {
+	entrySet := []*Entry{}
+	keyTrace := []rune{}
+	trie.entrySetDfs(trie.root, &entrySet, &keyTrace)
+	return entrySet
+}
+
+func (trie *Trie) entrySetDfs(node *node, set *[]*Entry, keyTrace *[]rune) {
+	if node.hasValue() {
+		*set = append(*set, newEntry(string(*keyTrace), node.value))
+	}
+	for c, child := range(node.table) {
+		*keyTrace = append(*keyTrace, c)
+		trie.entrySetDfs(child, set, keyTrace)
+		*keyTrace = (*keyTrace)[:len(*keyTrace) - 1]
+	}
+}
+
 func (trie *Trie) Iterator() Iterator {
-	return newTrieIterator(trie.root)
+	return newTrieIterator(trie)
 }
 
 type trieIterator struct {
-	stack *Stack
+	entrySet []*Entry
+	position int
 }
 
-func newTrieIterator(node *node) *trieIterator {
-	stack := NewStack()
-	if node != nil {
-		stack.Push(node)
-	}
+func newTrieIterator(trie *Trie) *trieIterator {
 	return &trieIterator{
-		stack: stack,
+		entrySet: trie.EntrySet(),
+		position: 0,
 	}
 }
 
 func (iterator *trieIterator) HasNext() bool {
-	iterator.rollToNextValue()
-	return !iterator.stack.IsEmpty()
+	return len(iterator.entrySet) > iterator.position
 }
 
 func (iterator *trieIterator) Next() interface{} {
-	if !iterator.HasNext() {
-		return nil
-	}
-	node := iterator.stack.Peek().(*node)
-	iterator.stack.Pop()
-	return node.value
-}
-
-func (iterator *trieIterator) rollToNextValue() {
-	for {
-		if iterator.stack.IsEmpty() {
-			break
-		}
-		node := iterator.stack.Peek().(*node)
-		if node.hasValue() {
-			break
-		}
-		iterator.stack.Pop()
-		for _, next := range(node.table) {
-			iterator.stack.Push(next)
-		}
-	}
+	entry := iterator.entrySet[iterator.position]
+	iterator.position++
+	return entry
 }

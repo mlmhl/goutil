@@ -2,6 +2,7 @@ package encoding
 
 type Encoder interface {
 	Int64() []byte
+	Int() []byte
 }
 
 var (
@@ -20,4 +21,8 @@ func (defaultEncoder *defaultEncoder) Int64(number int64) []byte {
 	}
 
 	return buffer
+}
+
+func (defaultEncoder *defaultEncoder) Int(number int) []byte {
+	return defaultEncoder.Int64(int64(number))
 }

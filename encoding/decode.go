@@ -21,5 +21,5 @@ func (defaultDecoder *defaultDecoder) Int64(buffer []byte) int64 {
 }
 
 func (defaultEncoder *defaultDecoder) Int(buffer []byte) int {
-	return defaultEncoder.Int64(buffer)
+	return int(defaultEncoder.Int64(buffer))
 }

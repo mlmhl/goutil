@@ -11,15 +11,17 @@ var (
 
 type defaultDecoder struct {}
 
-func (defaultDecoder *defaultDecoder) Int64(buffer []byte) int64 {
+func (defaultDecoder *defaultDecoder) Int64(buffer []byte) (int64, int) {
 	num := int64(0)
-	for _, b := range(buffer) {
+	for i := 0; i < 8; i++ {
 		num <<= 8;
-		num |= int64(b)
+		num |= int64(buffer[i])
 	}
-	return num
+	return num, 8
 }
 
-func (defaultEncoder *defaultDecoder) Int(buffer []byte) int {
-	return int(defaultEncoder.Int64(buffer))
+// return the decoded value and remained buffer
+func (defaultEncoder *defaultDecoder) Int(buffer []byte) (int, int) {
+	 val, size := defaultEncoder.Int64(buffer)
+	return int64(val), size
 }
